@@ -24,28 +24,32 @@ export const useStore = create(
       },
       transactions: [],
 
-      completeOnboarding: ({ baseMonthly, baseDaily, useLogging }) =>
-        set((s) => ({
+      completeOnboarding: ({ baseMonthly, baseDaily, useLogging }) => {
+        const bm = round2(Number(baseMonthly) || 0)
+        return set((s) => ({
           limits: {
-            baseMonthly: round2(Number(baseMonthly) || 0),
-            baseDaily: clampDailyNum(baseDaily),
+            baseMonthly: bm,
+            baseDaily: Math.min(clampDailyNum(baseDaily), bm),
             setupDay: bangkokDayKey(),
             setupMonth: bangkokMonthKey(),
           },
           preferences: { ...s.preferences, useLogging: !!useLogging, onboarded: true },
-        })),
+        }))
+      },
 
       // Editing limits re-anchors the setup day/month to "now": the entered
       // values represent the user's remaining as of this moment.
-      setLimits: ({ baseMonthly, baseDaily }) =>
-        set(() => ({
+      setLimits: ({ baseMonthly, baseDaily }) => {
+        const bm = round2(Number(baseMonthly) || 0)
+        return set(() => ({
           limits: {
-            baseMonthly: round2(Number(baseMonthly) || 0),
-            baseDaily: clampDailyNum(baseDaily),
+            baseMonthly: bm,
+            baseDaily: Math.min(clampDailyNum(baseDaily), bm),
             setupDay: bangkokDayKey(),
             setupMonth: bangkokMonthKey(),
           },
-        })),
+        }))
+      },
 
       setUseLogging: (useLogging) =>
         set((s) => ({ preferences: { ...s.preferences, useLogging: !!useLogging } })),
@@ -106,8 +110,9 @@ export const useStore = create(
 // The active cap for the current Bangkok day/month: the entered "remaining"
 // during the setup period, otherwise the full program cap (a fresh day/month).
 export function selectCaps(limits, ref = new Date()) {
-  const dailyCap = bangkokDayKey(ref) === limits.setupDay ? limits.baseDaily : MAX_DAILY
   const monthlyCap = bangkokMonthKey(ref) === limits.setupMonth ? limits.baseMonthly : MONTHLY_CAP
+  let dailyCap = bangkokDayKey(ref) === limits.setupDay ? limits.baseDaily : MAX_DAILY
+  dailyCap = Math.min(dailyCap, monthlyCap)
   return { dailyCap: round2(dailyCap), monthlyCap: round2(monthlyCap) }
 }
 
@@ -133,9 +138,12 @@ export function selectRemaining(state) {
     .filter((t) => isSameMonth(t.timestamp))
     .reduce((sum, t) => sum + t.govPaid, 0)
 
+  const remainingMonthly = round2(Math.max(0, monthlyCap - usedMonthly))
+  const remainingDaily = round2(Math.min(Math.max(0, dailyCap - usedDaily), remainingMonthly))
+
   return {
-    remainingDaily: round2(Math.max(0, dailyCap - usedDaily)),
-    remainingMonthly: round2(Math.max(0, monthlyCap - usedMonthly)),
+    remainingDaily,
+    remainingMonthly,
     usedDaily: round2(usedDaily),
     usedMonthly: round2(usedMonthly),
     dailyCap,
