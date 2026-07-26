@@ -1,8 +1,12 @@
-// Formatting + date helpers (Thai locale).
+// Formatting + date helpers. All "day" / "month" boundaries are computed in
+// Thailand time (Asia/Bangkok, UTC+7) so daily/monthly resets happen at Thai
+// midnight regardless of the visitor's device timezone. This is fully
+// client-side and works on static hosting like GitHub Pages.
+
+export const TZ = 'Asia/Bangkok'
 
 export function formatBaht(n) {
   const v = Number(n) || 0
-  // Show up to 2 decimals but drop trailing .00 for whole baht.
   const rounded = Math.round(v * 100) / 100
   const str = Number.isInteger(rounded)
     ? rounded.toLocaleString('th-TH')
@@ -12,32 +16,47 @@ export function formatBaht(n) {
 
 export function formatTime(iso) {
   try {
-    return new Date(iso).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+    return new Intl.DateTimeFormat('th-TH', {
+      timeZone: TZ,
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date(iso))
   } catch {
     return ''
   }
 }
 
-// Local YYYY-MM-DD (not UTC) so "today" matches the user's calendar day.
-export function localDayKey(d = new Date()) {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
+// Bangkok-local YYYY-MM-DD for any Date (en-CA yields ISO ordering).
+export function bangkokDayKey(d = new Date()) {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(d)
 }
 
-export function localMonthKey(d = new Date()) {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  return `${y}-${m}`
+// Bangkok-local YYYY-MM.
+export function bangkokMonthKey(d = new Date()) {
+  return bangkokDayKey(d).slice(0, 7)
+}
+
+// Bangkok-local HH:mm (24h) — used to default the back-dated time picker.
+export function bangkokTimeHM(d = new Date()) {
+  return new Intl.DateTimeFormat('en-GB', {
+    timeZone: TZ,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(d)
 }
 
 export function isSameDay(iso, ref = new Date()) {
-  return localDayKey(new Date(iso)) === localDayKey(ref)
+  return bangkokDayKey(new Date(iso)) === bangkokDayKey(ref)
 }
 
 export function isSameMonth(iso, ref = new Date()) {
-  return localMonthKey(new Date(iso)) === localMonthKey(ref)
+  return bangkokMonthKey(new Date(iso)) === bangkokMonthKey(ref)
 }
 
 export function uuid() {

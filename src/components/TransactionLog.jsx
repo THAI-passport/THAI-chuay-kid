@@ -1,12 +1,15 @@
 import React, { useMemo, useState } from 'react'
 import { useStore, selectTodayTransactions } from '../store/useStore'
 import { computeSplit } from '../lib/calc'
-import { formatBaht, formatTime, isSameDay, isSameMonth, localDayKey } from '../lib/format'
+import { formatBaht, formatTime, isSameDay, isSameMonth, bangkokDayKey, bangkokTimeHM } from '../lib/format'
+import { selectCaps } from '../store/useStore'
 import BottomSheet from './BottomSheet'
 
-// Remaining caps as of an arbitrary reference datetime (for back-dated entries).
+// Remaining caps as of an arbitrary reference datetime (for back-dated entries),
+// using the same per-period reset rules and Thailand-time day/month boundaries.
 function remainingAt(state, refDate) {
   const { limits, transactions } = state
+  const { dailyCap, monthlyCap } = selectCaps(limits, refDate)
   const usedDaily = transactions
     .filter((t) => isSameDay(t.timestamp, refDate))
     .reduce((s, t) => s + t.govPaid, 0)
@@ -14,8 +17,8 @@ function remainingAt(state, refDate) {
     .filter((t) => isSameMonth(t.timestamp, refDate))
     .reduce((s, t) => s + t.govPaid, 0)
   return {
-    remainingDaily: Math.max(0, limits.baseDaily - usedDaily),
-    remainingMonthly: Math.max(0, limits.baseMonthly - usedMonthly),
+    remainingDaily: Math.max(0, dailyCap - usedDaily),
+    remainingMonthly: Math.max(0, monthlyCap - usedMonthly),
   }
 }
 
@@ -28,13 +31,13 @@ export default function TransactionLog() {
   const [open, setOpen] = useState(false)
   const [price, setPrice] = useState('')
   const [name, setName] = useState('')
-  const [date, setDate] = useState(localDayKey())
-  const [time, setTime] = useState(
-    new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
-  )
+  const [date, setDate] = useState(bangkokDayKey())
+  const [time, setTime] = useState(bangkokTimeHM())
 
+  // Interpret the picked date/time as Bangkok wall-clock (+07:00) so the entry
+  // lands on the intended Thai day regardless of the device's timezone.
   const refIso = useMemo(() => {
-    const d = new Date(`${date}T${time || '12:00'}:00`)
+    const d = new Date(`${date}T${time || '12:00'}:00+07:00`)
     return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString()
   }, [date, time])
 

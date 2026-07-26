@@ -4,10 +4,9 @@ import { formatBaht } from '../lib/format'
 
 export default function Header() {
   const state = useStore()
-  const { remainingDaily, remainingMonthly } = selectRemaining(state)
-  const { baseDaily, baseMonthly } = state.limits
+  const { remainingDaily, remainingMonthly, dailyCap, monthlyCap } = selectRemaining(state)
 
-  const pct = (rem, base) => (base > 0 ? Math.max(0, Math.min(100, (rem / base) * 100)) : 0)
+  const pct = (rem, cap) => (cap > 0 ? Math.max(0, Math.min(100, (rem / cap) * 100)) : 0)
 
   return (
     <div className="app-header">
@@ -30,14 +29,14 @@ export default function Header() {
           <div className="label">สิทธิ์คงเหลือวันนี้</div>
           <div className="value">{formatBaht(remainingDaily)}</div>
           <div className="bar">
-            <span style={{ width: `${pct(remainingDaily, baseDaily)}%` }} />
+            <span style={{ width: `${pct(remainingDaily, dailyCap)}%` }} />
           </div>
         </div>
         <div className="balance">
           <div className="label">สิทธิ์คงเหลือเดือนนี้</div>
           <div className="value">{formatBaht(remainingMonthly)}</div>
           <div className="bar">
-            <span style={{ width: `${pct(remainingMonthly, baseMonthly)}%` }} />
+            <span style={{ width: `${pct(remainingMonthly, monthlyCap)}%` }} />
           </div>
         </div>
       </div>

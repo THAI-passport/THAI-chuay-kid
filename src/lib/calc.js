@@ -7,6 +7,7 @@
 export const GOV_RATE = 0.6 // government share
 export const USER_RATE = 0.4 // user share
 export const MAX_DAILY = 200 // program cap: max gov subsidy per day (baht)
+export const MONTHLY_CAP = 1000 // program cap: max gov subsidy per month (baht)
 
 // Clamp a numeric string to the 0..MAX_DAILY range, keeping it editable.
 export function clampDaily(str) {
