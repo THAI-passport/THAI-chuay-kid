@@ -4,7 +4,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // Relative base so the build works from any GitHub Pages project sub-path.
 export default defineConfig({
-  base: './',
+  base: '/THAI-chuay-kid/',
   plugins: [
     react(),
     VitePWA({
