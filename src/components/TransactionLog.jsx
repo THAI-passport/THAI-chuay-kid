@@ -101,8 +101,8 @@ export default function TransactionLog() {
         <label className="field-label">ราคาสินค้า (บาท)</label>
         <input
           className="text-input"
-          type="tel"
-          inputMode="numeric"
+          type="text"
+          inputMode="decimal"
           value={price}
           onChange={(e) => setPrice(e.target.value.replace(/[^0-9.]/g, ''))}
           placeholder="0"

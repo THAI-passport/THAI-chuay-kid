@@ -68,8 +68,8 @@ export default function Strategic() {
             </label>
             <input
               className="text-input"
-              type="tel"
-              inputMode="numeric"
+              type="text"
+              inputMode="decimal"
               value={cash}
               onChange={(e) => setCash(e.target.value.replace(/[^0-9.]/g, ''))}
               placeholder="0"

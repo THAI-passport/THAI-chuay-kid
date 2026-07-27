@@ -29,8 +29,8 @@ export default function Settings() {
         <label className="field-label">สิทธิ์คงเหลือเดือนนี้ (บาท)</label>
         <input
           className="text-input"
-          type="tel"
-          inputMode="numeric"
+          type="text"
+          inputMode="decimal"
           value={monthly}
           onChange={(e) => setMonthly(e.target.value.replace(/[^0-9.]/g, ''))}
         />
@@ -38,8 +38,8 @@ export default function Settings() {
         <label className="field-label">สิทธิ์คงเหลือวันนี้ (บาท)</label>
         <input
           className="text-input"
-          type="tel"
-          inputMode="numeric"
+          type="text"
+          inputMode="decimal"
           value={daily}
           onChange={(e) => setDaily(clampDaily(e.target.value))}
         />
