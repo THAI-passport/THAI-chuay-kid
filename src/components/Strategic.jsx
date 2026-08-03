@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import { useStore, selectRemaining } from '../store/useStore'
-import { maxOutPrice, pocketMoneyPower, computeSplit } from '../lib/calc'
+import { maxOutPrice, computeSplit, MAX_DAILY, clampDaily } from '../lib/calc'
 import { formatBaht } from '../lib/format'
 import SegmentedControl from './SegmentedControl'
 
@@ -10,22 +10,22 @@ export default function Strategic() {
   const effectiveRemaining = Math.min(remainingDaily, remainingMonthly)
 
   const [mode, setMode] = useState('maxout')
-  const [cash, setCash] = useState('')
+  const [credit, setCredit] = useState('')
 
+  // Max Out — uses the app's tracked remaining subsidy automatically.
   const maxOut = useMemo(() => maxOutPrice(effectiveRemaining), [effectiveRemaining])
   const maxOutSplit = useMemo(
     () => computeSplit(maxOut, remainingDaily, remainingMonthly),
     [maxOut, remainingDaily, remainingMonthly]
   )
 
-  const cashNum = Number(cash) || 0
-  const power = useMemo(
-    () => pocketMoneyPower(cashNum, effectiveRemaining),
-    [cashNum, effectiveRemaining]
-  )
-  const powerSplit = useMemo(
-    () => computeSplit(power, remainingDaily, remainingMonthly),
-    [power, remainingDaily, remainingMonthly]
+  // "I have this much subsidy" — user enters their remaining gov subsidy
+  // (สิทธิ์, capped at ฿200/day); we show the item price it can cover.
+  const creditNum = Number(credit) || 0
+  const item = useMemo(() => maxOutPrice(creditNum), [creditNum])
+  const itemSplit = useMemo(
+    () => computeSplit(item, creditNum, creditNum),
+    [item, creditNum]
   )
 
   return (
@@ -35,7 +35,7 @@ export default function Strategic() {
         <SegmentedControl
           options={[
             { value: 'maxout', label: 'ใช้สิทธิ์ให้คุ้ม' },
-            { value: 'pocket', label: 'มีเงินเท่านี้' },
+            { value: 'pocket', label: 'มีสิทธิ์เท่านี้' },
           ]}
           value={mode}
           onChange={setMode}
@@ -64,32 +64,33 @@ export default function Strategic() {
         ) : (
           <>
             <label className="field-label" style={{ marginTop: 14 }}>
-              เงินที่มีในกระเป๋า (บาท)
+              สิทธิ์ที่มี (บาท)
             </label>
             <input
               className="text-input"
               type="text"
               inputMode="decimal"
-              value={cash}
-              onChange={(e) => setCash(e.target.value.replace(/[^0-9.]/g, ''))}
+              value={credit}
+              onChange={(e) => setCredit(clampDaily(e.target.value))}
               placeholder="0"
             />
+            <div className="muted-note">สูงสุด {MAX_DAILY} บาทต่อวัน</div>
             <div className="result-big">
               <div className="k">ซื้อของได้สูงสุดถึง</div>
-              <div className="v">{formatBaht(power)}</div>
+              <div className="v">{formatBaht(item)}</div>
             </div>
             <div className="split" style={{ marginTop: 12 }}>
               <div className="box gov">
                 <div className="k">รัฐช่วยจ่าย</div>
-                <div className="v">{formatBaht(powerSplit.govPaid)}</div>
+                <div className="v">{formatBaht(itemSplit.govPaid)}</div>
               </div>
               <div className="box user">
                 <div className="k">คุณจ่ายเอง</div>
-                <div className="v">{formatBaht(powerSplit.userPaid)}</div>
+                <div className="v">{formatBaht(itemSplit.userPaid)}</div>
               </div>
             </div>
             <div className="muted-note">
-              รวมเงินสดของคุณกับสิทธิ์รัฐช่วยจ่ายที่เหลืออยู่ ({formatBaht(effectiveRemaining)})
+              คำนวณจากสิทธิ์รัฐช่วยจ่ายที่คุณมี — รัฐช่วย 60% คุณจ่ายเอง 40%
             </div>
           </>
         )}
